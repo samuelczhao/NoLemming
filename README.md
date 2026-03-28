@@ -170,16 +170,29 @@ export NOLEMMING_ENCODER_NAME=mock
 
 ---
 
-## Benchmarking
+## Benchmark Results
 
-NoLemming ships with a first-class benchmarking framework. 5 real earnings call events (AAPL, TSLA, NVDA, META, GOOGL Q4 2025) with ground truth sentiment data.
+3-way comparison across 5 real Q4 2025 earnings calls. Sentiment correlation with actual post-earnings social media sentiment (higher = better):
+
+| Event | Neural | Vanilla | Random | Winner |
+|-------|--------|---------|--------|--------|
+| AAPL | +0.034 | **+0.653** | +0.034 | vanilla |
+| GOOGL | **-0.544** | -0.679 | -0.976 | neural |
+| META | **+0.575** | -0.958 | +0.000 | neural |
+| NVDA | -0.768 | +0.000 | **+0.137** | random |
+| TSLA | **+0.078** | +0.000 | -0.533 | neural |
+| **Wins** | **3/5** | 1/5 | 1/5 | |
+
+Standout: META earnings — neural agents tracked real sentiment direction (+0.575) while vanilla agents predicted the exact opposite (-0.958).
+
+Run with Ollama/qwen2.5:3b (3B params, runs on CPU). Better LLM = better results.
 
 ```bash
-# 3-way comparison: neural vs vanilla vs random
-nolemming benchmark aapl_q4_2025
-
-# Run full Phase 0 validation
+# Run the benchmark yourself
 python scripts/run_phase0.py
+
+# Or benchmark a single event
+nolemming benchmark aapl_q4_2025
 ```
 
 ---

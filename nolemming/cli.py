@@ -170,6 +170,88 @@ def compare(
 
 
 @app.command()
+def demo() -> None:
+    """Run a quick demo with a sample earnings call."""
+    console.print(Panel.fit(
+        "[bold]NoLemming Demo[/bold] — Brain-Encoded Swarm Simulation",
+        border_style="cyan",
+    ))
+    console.print("Simulating social response to a sample earnings call...\n")
+
+    import tempfile
+
+    from nolemming.agents.factory import AgentFactory
+    from nolemming.analysis.sentiment import SentimentAnalyzer
+    from nolemming.analysis.signals import SignalExtractor
+    from nolemming.core.types import SimulationConfig, Stimulus
+    from nolemming.encoders.mock import MockEncoder
+    from nolemming.mapping.archetypes import ArchetypeClusterer
+    from nolemming.mapping.brain_atlas import BrainAtlas
+    from nolemming.mapping.compressor import VoxelCompressor
+    from nolemming.mapping.engagement import EngagementTemplateBuilder
+    from nolemming.simulation.engine import SimulationEngine
+
+    sample_text = (
+        "Company X reports Q4 earnings. Revenue of $25B beats estimates of $24B. "
+        "EPS of $2.18 vs expected $1.95. Raised full-year guidance citing strong "
+        "demand. 35% YoY cloud growth. $10B share buyback announced."
+    )
+
+    with tempfile.NamedTemporaryFile(suffix=".txt", mode="w", delete=False) as f:
+        f.write(sample_text)
+        stim_path = f.name
+
+    stimulus = Stimulus.from_path(stim_path)
+
+    console.print("[dim]1. Encoding stimulus with brain encoder...[/dim]")
+    response = MockEncoder(seed=42).encode(stimulus)
+    console.print(f"   Neural response: {response.activations.shape}")
+
+    console.print("[dim]2. Compressing to neural archetypes...[/dim]")
+    compressor = VoxelCompressor(n_dims=32)
+    compressor.fit_single(response)
+    compressed = compressor.compress_timesteps(response)
+    atlas = BrainAtlas()
+    archetypes = ArchetypeClusterer(n_archetypes=5).cluster(
+        compressed, atlas, response.activations,
+    )
+    template = EngagementTemplateBuilder().build(archetypes, response, atlas)
+
+    console.print("   Archetypes:")
+    for a in archetypes:
+        console.print(f"     {a.label} ({a.population_fraction:.0%}) — {a.dominant_regions[:2]}")
+
+    console.print("[dim]3. Generating agent population...[/dim]")
+    agents = AgentFactory(archetypes=archetypes, seed=42).generate_population(30)
+    console.print(f"   {len(agents)} agents created")
+
+    console.print("[dim]4. Running social simulation (3 rounds)...[/dim]")
+    config = SimulationConfig(stimulus=stimulus, n_agents=30, n_rounds=3)
+    engine = SimulationEngine(config=config)
+    _run_async(engine.setup(agents, template))
+    sim_result = _run_async(engine.run())
+
+    console.print("[dim]5. Analyzing results...[/dim]")
+    _ = SentimentAnalyzer().extract_trajectory(sim_result)
+    signals = SignalExtractor().extract(sim_result)
+
+    console.print()
+    console.print(Panel(
+        f"Sentiment: {signals.sentiment_score:+.3f}\n"
+        f"Consensus: {signals.consensus_strength:.3f}\n"
+        f"Dominant archetype: {signals.dominant_archetype}\n"
+        f"Keywords: {', '.join(signals.narrative_keywords[:5])}\n"
+        f"Archetype breakdown: {signals.archetype_dominance}",
+        title="Prediction",
+        border_style="green",
+    ))
+
+    import os
+    os.unlink(stim_path)
+    console.print("\n[dim]Done. Run 'nolemming run <file>' for a full simulation.[/dim]")
+
+
+@app.command()
 def encoders() -> None:
     """List available brain encoders."""
     from nolemming.encoders.registry import encoder_registry
