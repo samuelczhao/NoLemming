@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import uuid
 from pathlib import Path
 
 from farswarm.config import FarswarmConfig
@@ -103,9 +102,9 @@ class FarswarmPipeline:
         """Run the social simulation with neurally-grounded agents."""
         from farswarm.simulation.engine import SimulationEngine
 
-        engine = SimulationEngine(config=sim_config, llm=self.llm)
+        engine = SimulationEngine(config=sim_config)
         await engine.setup(agents, engagement_template)
-        return await engine.run(archetypes)
+        return await engine.run()
 
     async def analyze(self, result: SimulationResult) -> dict:
         """Run full analysis on simulation results."""

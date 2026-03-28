@@ -5,7 +5,6 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
-
 REGIONS: dict[str, tuple[int, int]] = {
     "visual_cortex": (0, 2000),
     "auditory_cortex": (2000, 3000),

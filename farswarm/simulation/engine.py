@@ -77,7 +77,8 @@ class SimulationEngine:
         step_results = await self._platform.step(active)  # type: ignore[union-attr]
         self._log_actions(actions_path, round_num, step_results)
         if round_num % 10 == 0:
-            logger.info("Round %d/%d: %d active agents", round_num, self._config.n_rounds, len(active))
+            total = self._config.n_rounds
+            logger.info("Round %d/%d: %d active agents", round_num, total, len(active))
 
     def _get_active_agents(self, round_num: int) -> list[AgentProfile]:
         """Select active agents using engagement template modulation."""

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from openai import AsyncOpenAI
@@ -114,7 +114,7 @@ def _parse_llm_response(
         key_predictions=data.get("key_predictions", []),
         confidence=float(data.get("confidence", 0.5)),
         signals=signals,
-        generated_at=datetime.now(timezone.utc).isoformat(),
+        generated_at=datetime.now(UTC).isoformat(),
     )
 
 

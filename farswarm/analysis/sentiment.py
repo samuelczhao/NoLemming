@@ -86,10 +86,14 @@ def _load_posts_by_round_and_archetype(
         lambda: defaultdict(list)
     )
     with sqlite3.connect(db_path) as conn:
-        cursor = conn.execute(
-            "SELECT round, archetype_id, content "
-            "FROM posts ORDER BY round"
-        )
+        try:
+            cursor = conn.execute(
+                "SELECT p.round, u.archetype_id, p.content "
+                "FROM posts p JOIN users u ON p.user_id = u.user_id "
+                "ORDER BY p.round"
+            )
+        except sqlite3.OperationalError:
+            return dict(result)
         for round_num, archetype_id, content in cursor:
             result[archetype_id][round_num].append(content)
     return dict(result)

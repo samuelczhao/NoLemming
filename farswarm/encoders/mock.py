@@ -82,8 +82,9 @@ def _add_region_structure(
     """Boost specific cortical regions based on stimulus modality."""
     region_gains = _region_gains_for(stimulus_type)
     for region, gain in region_gains:
+        n_verts = len(range(*region.indices(FSAVERAGE5_VERTICES)))
         activations[:, region] += rng.normal(
-            loc=gain, scale=gain * 0.2, size=(activations.shape[0], len(range(*region.indices(FSAVERAGE5_VERTICES))))
+            loc=gain, scale=gain * 0.2, size=(activations.shape[0], n_verts),
         )
 
 

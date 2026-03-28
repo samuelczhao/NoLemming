@@ -20,21 +20,27 @@ class CoalitionReport:
 
 def _load_follows(db_path: str) -> list[tuple[int, int]]:
     """Load follow relationships from the simulation DB."""
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.execute(
-            "SELECT follower_id, followed_id FROM follows"
-        )
-        return list(cursor.fetchall())
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.execute(
+                "SELECT follower_id, followee_id FROM follows"
+            )
+            return list(cursor.fetchall())
+    except sqlite3.OperationalError:
+        return []
 
 
 def _load_interactions(db_path: str) -> list[tuple[int, int, str]]:
     """Load interactions (likes, reposts, replies) from the DB."""
-    with sqlite3.connect(db_path) as conn:
-        cursor = conn.execute(
-            "SELECT source_id, target_id, action_type "
-            "FROM interactions"
-        )
-        return list(cursor.fetchall())
+    try:
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.execute(
+                "SELECT source_id, target_id, action_type "
+                "FROM interactions"
+            )
+            return list(cursor.fetchall())
+    except sqlite3.OperationalError:
+        return []
 
 
 def _build_interaction_graph(

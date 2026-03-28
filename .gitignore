@@ -13,3 +13,4 @@ uploads/
 cache/
 benchmarks/results/
 *.db
+outputs/
