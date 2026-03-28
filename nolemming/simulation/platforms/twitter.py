@@ -135,7 +135,7 @@ class TwitterPlatform(SimulationPlatform):
         import asyncio
 
         actions: list[dict[str, object]] = []
-        sem = asyncio.Semaphore(3)  # limit concurrency for low-compute
+        sem = asyncio.Semaphore(1)  # sequential to respect rate limits
 
         async def gen_post(agent: AgentProfile) -> dict[str, object]:
             async with sem:

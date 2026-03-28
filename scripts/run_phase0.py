@@ -41,8 +41,8 @@ N_AGENTS = 15
 N_ROUNDS = 7
 N_ARCHETYPES = 5
 PCA_DIMS = 32
-LLM_MODEL = "qwen2.5:3b"
-LLM_BASE_URL = "http://localhost:11434/v1"
+LLM_MODEL = "llama-3.3-70b-versatile"
+LLM_BASE_URL = "https://api.groq.com/openai/v1"
 DATA_DIR = Path("benchmarks/data")
 
 # Set True to use LLM for post generation (slower but meaningful content)
@@ -93,9 +93,12 @@ async def run_condition(
 
     llm = None
     if USE_LLM:
+        import os
         from nolemming.core.llm import OpenAICompatibleBackend
         llm = OpenAICompatibleBackend(
-            model=LLM_MODEL, base_url=LLM_BASE_URL,
+            model=LLM_MODEL,
+            base_url=LLM_BASE_URL,
+            api_key=os.environ.get("GROQ_API_KEY"),
         )
 
     print(f"    [{name}] Running simulation ({N_AGENTS} agents, {N_ROUNDS} rounds)...")

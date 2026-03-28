@@ -77,16 +77,29 @@ class OpenAICompatibleBackend(LLMBackend):
         temperature: float = 0.7,
         max_tokens: int = 2000,
     ) -> LLMResponse:
+        import asyncio
+
         client = self._get_client()
-        response = await client.chat.completions.create(  # type: ignore[union-attr]
-            model=self._model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-        )
+        for attempt in range(5):
+            try:
+                response = await client.chat.completions.create(  # type: ignore[union-attr]
+                    model=self._model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                break
+            except Exception as e:
+                if "rate_limit" in str(e).lower() or "429" in str(e):
+                    wait = 2 ** attempt
+                    await asyncio.sleep(wait)
+                    continue
+                raise
+        else:
+            return LLMResponse(content="[rate limited]", model=self._model)
         choice = response.choices[0]
         usage = {}
         if response.usage:

@@ -29,7 +29,10 @@ def _create_default_registry() -> EncoderRegistry:
     registry = EncoderRegistry()
 
     from nolemming.encoders.mock import MockEncoder
+    from nolemming.encoders.precomputed import PrecomputedEncoder
+
     registry.register("mock", MockEncoder)
+    registry.register("precomputed", PrecomputedEncoder)
 
     try:
         from nolemming.encoders.tribe_v2 import TribeV2Encoder
