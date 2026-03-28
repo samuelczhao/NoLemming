@@ -63,6 +63,8 @@ class OpenAICompatibleBackend(LLMBackend):
             kwargs: dict[str, str] = {}
             if self._api_key is not None:
                 kwargs["api_key"] = self._api_key
+            elif self._base_url is not None:
+                kwargs["api_key"] = "ollama"  # Ollama doesn't need a real key
             if self._base_url is not None:
                 kwargs["base_url"] = self._base_url
             self._client = AsyncOpenAI(**kwargs)

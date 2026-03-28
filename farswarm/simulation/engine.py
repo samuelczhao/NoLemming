@@ -33,8 +33,10 @@ class SimulationEngine:
         self,
         config: SimulationConfig,
         output_base: Path = DEFAULT_OUTPUT_BASE,
+        llm: object | None = None,
     ) -> None:
         self._config = config
+        self._llm = llm
         self._simulation_id = uuid.uuid4().hex[:12]
         self._output_dir = output_base / self._simulation_id
         self._agents: list[AgentProfile] = []
@@ -101,10 +103,22 @@ class SimulationEngine:
 
     def _create_platform(self) -> SimulationPlatform:
         """Instantiate the correct platform."""
+        stimulus_context = self._read_stimulus_context()
         if self._config.platform == Platform.TWITTER:
-            return TwitterPlatform(db_path=self._output_dir / "simulation.db")
+            return TwitterPlatform(
+                db_path=self._output_dir / "simulation.db",
+                llm=self._llm,
+                stimulus_context=stimulus_context,
+            )
         msg = f"Unsupported platform: {self._config.platform}"
         raise ValueError(msg)
+
+    def _read_stimulus_context(self) -> str:
+        """Read stimulus file text for platform context."""
+        path = self._config.stimulus.path
+        if path.suffix in (".txt", ".md") and path.exists():
+            return path.read_text(encoding="utf-8")[:500]
+        return path.stem
 
     def _create_dynamics(
         self,

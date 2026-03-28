@@ -52,9 +52,14 @@ class OasisEnv(Protocol):
 
 
 class TwitterPlatform(SimulationPlatform):
-    """Twitter-like platform backed by OASIS or fallback."""
+    """Twitter-like platform backed by OASIS or LLM fallback."""
 
-    def __init__(self, db_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        db_path: Path | None = None,
+        llm: object | None = None,
+        stimulus_context: str = "",
+    ) -> None:
         self._env: OasisEnv | None = None
         self._agents: list[AgentProfile] = []
         self._oasis_agents: list[object] = []
@@ -62,6 +67,8 @@ class TwitterPlatform(SimulationPlatform):
         self._db_path = db_path
         self._round = 0
         self._conn: sqlite3.Connection | None = None
+        self._llm = llm
+        self._stimulus_context = stimulus_context
 
     async def setup(self, agents: list[AgentProfile]) -> None:
         """Initialize platform and write agent CSV for OASIS."""
@@ -76,7 +83,10 @@ class TwitterPlatform(SimulationPlatform):
         """Execute one step with active agents."""
         if OASIS_AVAILABLE and self._env is not None:
             return await self._step_oasis(active_agents)
-        result = self._step_fallback(active_agents)
+        if self._llm is not None:
+            result = await self._step_llm_fallback(active_agents)
+        else:
+            result = self._step_fallback(active_agents)
         self._round += 1
         return result
 
@@ -118,13 +128,60 @@ class TwitterPlatform(SimulationPlatform):
         result = await self._env.step(actions)  # type: ignore[union-attr]
         return self._parse_oasis_result(result)
 
+    async def _step_llm_fallback(
+        self, active_agents: list[AgentProfile],
+    ) -> list[dict[str, object]]:
+        """Generate posts using LLM for each active agent."""
+        import asyncio
+
+        actions: list[dict[str, object]] = []
+        sem = asyncio.Semaphore(3)  # limit concurrency for low-compute
+
+        async def gen_post(agent: AgentProfile) -> dict[str, object]:
+            async with sem:
+                post = await self._generate_llm_post(agent)
+                self._posts.append(post)
+                self._persist_post(agent.agent_id, post)
+                return {
+                    "agent_id": agent.agent_id,
+                    "action": "create_post",
+                    "content": post,
+                }
+
+        tasks = [gen_post(a) for a in active_agents]
+        actions = await asyncio.gather(*tasks)
+        return list(actions)
+
+    async def _generate_llm_post(self, agent: AgentProfile) -> str:
+        """Use LLM to generate a realistic social media post."""
+        recent = self._posts[-5:] if self._posts else ["(no posts yet)"]
+        recent_str = "\n".join(f"- {p[:100]}" for p in recent)
+
+        response = await self._llm.generate(  # type: ignore[union-attr]
+            system_prompt=(
+                f"You are {agent.name} (@{agent.username}). "
+                f"Cognitive profile: {agent.archetype.label} — {agent.archetype.description} "
+                f"Your stance: {agent.stance}. "
+                "Write a single short social media post (1-2 sentences, max 200 chars). "
+                "Be opinionated. React to the topic and recent discussion."
+            ),
+            user_prompt=(
+                f"Topic: {self._stimulus_context}\n\n"
+                f"Recent posts in your feed:\n{recent_str}\n\n"
+                "Write your post:"
+            ),
+            temperature=0.9,
+            max_tokens=100,
+        )
+        return response.content.strip()[:280]
+
     def _step_fallback(
         self, active_agents: list[AgentProfile],
     ) -> list[dict[str, object]]:
-        """Generate synthetic actions and persist to SQLite."""
+        """Generate synthetic actions without LLM (fastest, for testing)."""
         actions: list[dict[str, object]] = []
         for agent in active_agents:
-            post = self._generate_fallback_post(agent)
+            post = self._generate_static_post(agent)
             self._posts.append(post)
             self._persist_post(agent.agent_id, post)
             actions.append({
@@ -134,8 +191,8 @@ class TwitterPlatform(SimulationPlatform):
             })
         return actions
 
-    def _generate_fallback_post(self, agent: AgentProfile) -> str:
-        """Create a synthetic post reflecting the agent's archetype."""
+    def _generate_static_post(self, agent: AgentProfile) -> str:
+        """Create a synthetic post without LLM."""
         label = agent.archetype.label
         stance = agent.stance
         return f"[{agent.username}] As a {label} thinker ({stance}): discussing the topic."
