@@ -23,17 +23,17 @@ async def main(
     model: str = "gpt-4o-mini",
     base_url: str | None = None,
 ) -> None:
-    from farswarm.config import FarswarmConfig
-    from farswarm.core.llm import OpenAICompatibleBackend
-    from farswarm.core.pipeline import FarswarmPipeline
+    from nolemming.config import NoLemmingConfig
+    from nolemming.core.llm import OpenAICompatibleBackend
+    from nolemming.core.pipeline import NoLemmingPipeline
 
-    config = FarswarmConfig(
+    config = NoLemmingConfig(
         encoder_name=encoder,
         llm_model=model,
         llm_base_url=base_url,
     )
     llm = OpenAICompatibleBackend(model=model, base_url=base_url)
-    pipeline = FarswarmPipeline(config=config, llm=llm)
+    pipeline = NoLemmingPipeline(config=config, llm=llm)
 
     print("Analyzing neural response distribution shifts...")
     print(f"Processing {len(stimuli)} stimuli\n")
@@ -42,7 +42,7 @@ async def main(
 
     for path in stimuli:
         name = Path(path).name
-        from farswarm.core.types import Stimulus
+        from nolemming.core.types import Stimulus
 
         stimulus = Stimulus.from_path(path)
         response = pipeline.encode_stimulus(stimulus)

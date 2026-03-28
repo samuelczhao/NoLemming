@@ -5,11 +5,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from farswarm.agents.factory import AgentFactory
-from farswarm.analysis.networks import NetworkAnalyzer
-from farswarm.analysis.sentiment import SentimentAnalyzer, SentimentTrajectory
-from farswarm.analysis.signals import PredictionSignals, SignalExtractor
-from farswarm.core.types import (
+from nolemming.agents.factory import AgentFactory
+from nolemming.analysis.networks import NetworkAnalyzer
+from nolemming.analysis.sentiment import SentimentAnalyzer, SentimentTrajectory
+from nolemming.analysis.signals import PredictionSignals, SignalExtractor
+from nolemming.core.types import (
     AgentProfile,
     EngagementTemplate,
     NeuralArchetype,
@@ -20,12 +20,12 @@ from farswarm.core.types import (
     Stimulus,
     StimulusType,
 )
-from farswarm.encoders.mock import MockEncoder
-from farswarm.mapping.archetypes import ArchetypeClusterer
-from farswarm.mapping.brain_atlas import BrainAtlas
-from farswarm.mapping.compressor import VoxelCompressor
-from farswarm.mapping.engagement import EngagementTemplateBuilder
-from farswarm.simulation.engine import SimulationEngine
+from nolemming.encoders.mock import MockEncoder
+from nolemming.mapping.archetypes import ArchetypeClusterer
+from nolemming.mapping.brain_atlas import BrainAtlas
+from nolemming.mapping.compressor import VoxelCompressor
+from nolemming.mapping.engagement import EngagementTemplateBuilder
+from nolemming.simulation.engine import SimulationEngine
 
 
 class TestFullPipeline:

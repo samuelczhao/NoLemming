@@ -24,17 +24,17 @@ async def main(
     base_url: str | None = None,
     n_agents: int = 500,
 ) -> None:
-    from farswarm.config import FarswarmConfig
-    from farswarm.core.llm import OpenAICompatibleBackend
-    from farswarm.core.pipeline import FarswarmPipeline
+    from nolemming.config import NoLemmingConfig
+    from nolemming.core.llm import OpenAICompatibleBackend
+    from nolemming.core.pipeline import NoLemmingPipeline
 
-    config = FarswarmConfig(
+    config = NoLemmingConfig(
         encoder_name=encoder,
         llm_model=model,
         llm_base_url=base_url,
     )
     llm = OpenAICompatibleBackend(model=model, base_url=base_url)
-    pipeline = FarswarmPipeline(config=config, llm=llm)
+    pipeline = NoLemmingPipeline(config=config, llm=llm)
 
     results = {}
     for path in stimuli:

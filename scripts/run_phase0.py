@@ -20,23 +20,23 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from farswarm.agents.factory import AgentFactory
-from farswarm.analysis.networks import NetworkAnalyzer
-from farswarm.analysis.sentiment import SentimentAnalyzer
-from farswarm.analysis.signals import SignalExtractor
-from farswarm.benchmark.ground_truth import GroundTruthLoader
-from farswarm.benchmark.metrics import (
+from nolemming.agents.factory import AgentFactory
+from nolemming.analysis.networks import NetworkAnalyzer
+from nolemming.analysis.sentiment import SentimentAnalyzer
+from nolemming.analysis.signals import SignalExtractor
+from nolemming.benchmark.ground_truth import GroundTruthLoader
+from nolemming.benchmark.metrics import (
     compute_engagement_divergence,
     compute_narrative_overlap,
     compute_sentiment_correlation,
 )
-from farswarm.core.types import AgentProfile, SimulationConfig, Stimulus
-from farswarm.encoders.mock import MockEncoder
-from farswarm.mapping.archetypes import ArchetypeClusterer
-from farswarm.mapping.brain_atlas import BrainAtlas
-from farswarm.mapping.compressor import VoxelCompressor
-from farswarm.mapping.engagement import EngagementTemplateBuilder
-from farswarm.simulation.engine import SimulationEngine
+from nolemming.core.types import AgentProfile, SimulationConfig, Stimulus
+from nolemming.encoders.mock import MockEncoder
+from nolemming.mapping.archetypes import ArchetypeClusterer
+from nolemming.mapping.brain_atlas import BrainAtlas
+from nolemming.mapping.compressor import VoxelCompressor
+from nolemming.mapping.engagement import EngagementTemplateBuilder
+from nolemming.simulation.engine import SimulationEngine
 
 N_AGENTS = 15
 N_ROUNDS = 3
@@ -90,7 +90,7 @@ async def run_condition(
 
     llm = None
     if USE_LLM:
-        from farswarm.core.llm import OpenAICompatibleBackend
+        from nolemming.core.llm import OpenAICompatibleBackend
         llm = OpenAICompatibleBackend(
             model=LLM_MODEL, base_url=LLM_BASE_URL,
         )

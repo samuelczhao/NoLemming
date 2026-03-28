@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 import pytest
 
-from farswarm.core.types import (
+from nolemming.core.types import (
     FSAVERAGE5_VERTICES,
     CompressedResponse,
     EngagementTemplate,

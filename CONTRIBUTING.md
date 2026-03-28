@@ -1,10 +1,10 @@
-# Contributing to Farswarm
+# Contributing to NoLemming
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/samuelczhao/farswarm.git
-cd farswarm
+git clone https://github.com/samuelczhao/nolemming.git
+cd nolemming
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest tests/ -v
@@ -13,7 +13,7 @@ pytest tests/ -v
 ## Architecture
 
 ```
-farswarm/
+nolemming/
 ├── core/           # Types, pipeline orchestrator, LLM abstraction
 ├── encoders/       # Brain encoder plugins (start here to add a new encoder)
 ├── mapping/        # Neural response → archetypes → engagement templates
@@ -29,14 +29,14 @@ farswarm/
 
 ## Adding a Brain Encoder
 
-1. Create `farswarm/encoders/my_encoder.py`
-2. Subclass `BrainEncoder` from `farswarm.encoders.base`
+1. Create `nolemming/encoders/my_encoder.py`
+2. Subclass `BrainEncoder` from `nolemming.encoders.base`
 3. Implement `encode(stimulus: Stimulus) -> NeuralResponse` and `name` property
-4. Register in `farswarm/encoders/registry.py`
+4. Register in `nolemming/encoders/registry.py`
 
 ```python
-from farswarm.encoders.base import BrainEncoder
-from farswarm.core.types import NeuralResponse, Stimulus
+from nolemming.encoders.base import BrainEncoder
+from nolemming.core.types import NeuralResponse, Stimulus
 
 class MyEncoder(BrainEncoder):
     @property
@@ -51,13 +51,13 @@ class MyEncoder(BrainEncoder):
 
 ## Adding an LLM Backend
 
-1. Subclass `LLMBackend` from `farswarm.core.llm`
+1. Subclass `LLMBackend` from `nolemming.core.llm`
 2. Implement `generate()` and `model_name()`
 3. Register with `llm_registry.register("name", MyBackend)`
 
 ## Code Standards
 
-- `ruff check farswarm/` must pass
+- `ruff check nolemming/` must pass
 - All functions have type annotations
 - No function longer than 20 lines
 - Tests alongside code changes: `pytest tests/ -v`
@@ -73,7 +73,7 @@ pytest tests/ -v
 pytest tests/test_mapping.py -v
 
 # With coverage
-pytest tests/ --cov=farswarm --cov-report=term-missing
+pytest tests/ --cov=nolemming --cov-report=term-missing
 ```
 
 ## Key Types

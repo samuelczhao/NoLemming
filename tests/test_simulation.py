@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from farswarm.core.types import (
+from nolemming.core.types import (
     AgentProfile,
     EngagementTemplate,
     NeuralArchetype,
@@ -16,8 +16,8 @@ from farswarm.core.types import (
     Stimulus,
     StimulusType,
 )
-from farswarm.simulation.engine import SimulationEngine
-from farswarm.simulation.platforms.twitter import TwitterPlatform
+from nolemming.simulation.engine import SimulationEngine
+from nolemming.simulation.platforms.twitter import TwitterPlatform
 
 
 def _make_archetype(arch_id: int = 0) -> NeuralArchetype:

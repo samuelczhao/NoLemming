@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "farswarm"
+name = "nolemming"
 version = "0.1.0"
-description = "Brain-encoded swarm social simulation engine"
+description = "Don't follow the herd. Predict it. Brain-encoded swarm social simulation."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -64,7 +64,7 @@ dev = [
 ]
 
 [project.scripts]
-farswarm = "farswarm.cli:app"
+nolemming = "nolemming.cli:app"
 
 [tool.ruff]
 target-version = "py311"

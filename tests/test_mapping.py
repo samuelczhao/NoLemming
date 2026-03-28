@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from farswarm.core.types import (
+from nolemming.core.types import (
     FSAVERAGE5_VERTICES,
     CompressedResponse,
     EngagementTemplate,
@@ -14,11 +14,11 @@ from farswarm.core.types import (
     Stimulus,
     StimulusType,
 )
-from farswarm.encoders.mock import MockEncoder
-from farswarm.mapping.archetypes import ArchetypeClusterer
-from farswarm.mapping.brain_atlas import BrainAtlas, REGIONS
-from farswarm.mapping.compressor import VoxelCompressor
-from farswarm.mapping.engagement import EngagementTemplateBuilder
+from nolemming.encoders.mock import MockEncoder
+from nolemming.mapping.archetypes import ArchetypeClusterer
+from nolemming.mapping.brain_atlas import BrainAtlas, REGIONS
+from nolemming.mapping.compressor import VoxelCompressor
+from nolemming.mapping.engagement import EngagementTemplateBuilder
 
 
 @pytest.fixture()

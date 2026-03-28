@@ -1,4 +1,4 @@
-# Farswarm
+# NoLemming
 
 ## Project Overview
 Brain-encoded swarm social simulation engine combining Meta TRIBE v2 brain encoding with OASIS multi-agent social simulation.
@@ -18,16 +18,16 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
 # Typecheck
-.venv/bin/mypy farswarm/
+.venv/bin/mypy nolemming/
 
 # Tests
 .venv/bin/pytest tests/ -v
 
 # Lint
-.venv/bin/ruff check farswarm/
+.venv/bin/ruff check nolemming/
 
 # Format
-.venv/bin/ruff format farswarm/
+.venv/bin/ruff format nolemming/
 ```
 
 ## Architecture Rules

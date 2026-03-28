@@ -1,217 +1,200 @@
-# Farswarm
+# NoLemming
 
-**Brain-encoded swarm social simulation engine.**
+**Don't follow the herd. Predict it.**
 
-Feed any stimulus (video, audio, text) into Farswarm. It predicts how human brains would process it, generates thousands of neurally-grounded agents, and simulates their collective social behavior to produce prediction reports.
+NoLemming is a brain-encoded swarm social simulation engine. It takes any stimulus — an earnings call, a news article, a product launch video — predicts how human brains would process it, spawns thousands of neurally-grounded agents, and simulates how they'd collectively react on social media.
 
-The first project built on [Meta TRIBE v2](https://github.com/facebookresearch/tribev2) — combining brain encoding with multi-agent social simulation.
+The result: a prediction of public sentiment *before* the public reacts.
+
+Built on [Meta TRIBE v2](https://github.com/facebookresearch/tribev2) (brain encoding) + [OASIS](https://github.com/camel-ai/oasis) (social simulation). First project to combine computational neuroscience with multi-agent swarm intelligence.
+
+---
+
+## Why This Exists
+
+Every multi-agent simulation today generates agent personalities from LLM heuristics — generic, interchangeable, ungrounded in reality.
+
+NoLemming is different. It generates agents from **predicted brain activation patterns**. Different stimuli activate different neural circuits, producing fundamentally different population dynamics:
+
+| Stimulus | Dominant Neural Response | Agent Population | Predicted Outcome |
+|---|---|---|---|
+| Alarming earnings miss | Amygdala (fear) | Fear-dominant agents | Fast panic spread, negative cascade |
+| Breakthrough product | Reward circuits (NAcc) | Reward-seeking agents | Sustained positive engagement |
+| Complex policy doc | Prefrontal cortex | Analytical agents | Slow, deliberative discourse |
+| Controversial CEO | Mixed amygdala + reward | Polarized population | Tribal clustering, high volatility |
+
+This isn't metaphor — the agents' behavior is directly parameterized by predicted cortical activation patterns.
+
+---
 
 ## How It Works
 
 ```
-Stimulus (earnings call, news article, ad)
-    |
-    v
-Brain Encoder (TRIBE v2 / pluggable)
-    |
-    v
-20,484 cortical vertex activations
-    |
-    +---> PCA Compression (50-100 dims)
-    |         |
-    |         v
-    |     Neural Archetypes (K-means clustering)
-    |     "fear-dominant", "reward-seeking", "analytical", etc.
-    |
-    +---> Engagement Template
-              (archetype x content_similarity -> engagement_prob)
-                  |
-                  v
-          Agent Population (1000+ agents)
-          Each grounded in a neural archetype
-                  |
-                  v
-          Social Simulation (Twitter/Reddit-like)
-          Agents post, share, debate, form coalitions
-                  |
-                  v
-          Prediction Report
-          Sentiment trajectory, dominant narratives,
-          archetype dynamics, quantitative signals
+Stimulus (video / audio / text)
+        |
+        v
+  Brain Encoder (TRIBE v2 / pluggable)
+        |
+        v
+  20,484 cortical vertex activations
+        |
+   -----+-----
+   |         |
+   v         v
+  PCA     Engagement
+  (50d)   Template
+   |         |
+   v         |
+  K-means    |
+  clustering |
+   |         |
+   v         v
+  Neural Archetypes + Engagement Map
+  ("fear-dominant", "reward-seeking", "analytical"...)
+        |
+        v
+  Agent Population (1000+)
+  Each grounded in a neural archetype
+        |
+        v
+  Social Simulation (Twitter/Reddit-like)
+  LLM-powered agents post, share, debate
+        |
+        v
+  Prediction Report
+  Sentiment trajectory | Archetype dynamics
+  Narrative keywords   | Quantitative signals
 ```
 
-## Why Neural Grounding Matters
-
-Standard multi-agent simulations generate agent personalities from LLM heuristics. Farswarm generates them from **predicted brain activation patterns** — how a population of real brains would actually process the stimulus.
-
-This matters because different stimuli activate different neural circuits:
-- An alarming earnings miss activates **amygdala** (fear) -> more fear-driven agents -> faster panic spread
-- A breakthrough product launch activates **reward circuits** -> more optimistic agents -> sustained positive engagement
-- A complex policy document activates **prefrontal cortex** -> more analytical agents -> slower, deliberative discourse
-
-The simulation captures these dynamics because agent behavior is grounded in the stimulus's neural signature, not generic personality templates.
-
-## Architecture: Why Hybrid (Architecture C)
-
-We evaluated three architectures and chose the one that maximizes signal preservation:
-
-| Architecture | Signal Preserved | Compute Cost | Feasibility |
-|---|---|---|---|
-| A: Neural personality init only | ~3% (Big Five bottleneck destroys signal) | Low | High |
-| B: Continuous neural scoring | ~100% theoretical, unreliable in practice | Prohibitive (1M forward passes) | Low |
-| **C: Hybrid (neural init + engagement templates)** | **~15-25%** | **Low (one-time)** | **High** |
-
-Architecture C runs the brain encoder **once** on the original stimulus (where it's reliable), skips the lossy Big Five personality mapping, and uses PCA + clustering to create **neural archetypes** directly from the activation data. A pre-computed engagement template modulates agent behavior throughout the simulation.
+---
 
 ## Quick Start
 
 ```bash
-pip install farswarm
+pip install nolemming
 
-# Run with mock encoder (no GPU needed)
-farswarm run earnings_call.txt --agents 500 --encoder mock
+# Run with mock brain encoder (no GPU needed)
+nolemming run earnings_call.txt --agents 500 --encoder mock
 
-# Run with TRIBE v2 brain encoder
-pip install farswarm[tribe]
-farswarm run earnings_call.mp4 --agents 1000 --encoder tribe_v2
-
-# Use any LLM backend (Ollama, vLLM, Together, etc.)
-farswarm run stimulus.txt --model llama3 --base-url http://localhost:11434/v1
+# Use any LLM backend
+nolemming run stimulus.txt --model llama3 --base-url http://localhost:11434/v1
+nolemming run stimulus.txt --model gpt-4o --api-key sk-...
 
 # A/B test content variants
-farswarm compare variant_a.txt variant_b.txt --agents 1000
+nolemming compare variant_a.txt variant_b.txt --agents 1000
 
-# Run benchmark
-farswarm benchmark aapl_q4_2025 --data-dir ./benchmarks/data
+# 3-way benchmark (neural vs vanilla vs random)
+nolemming benchmark aapl_q4_2025
 ```
 
 ### Python API
 
 ```python
 import asyncio
-from farswarm.core.pipeline import FarswarmPipeline
-from farswarm.core.llm import OpenAICompatibleBackend
+from nolemming.core.pipeline import NoLemmingPipeline
+from nolemming.core.llm import OpenAICompatibleBackend
 
-# Works with any OpenAI-compatible API
+# Works with any OpenAI-compatible API (Ollama, vLLM, Together, Groq...)
 llm = OpenAICompatibleBackend(
-    model="llama3",
-    base_url="http://localhost:11434/v1",  # Ollama
+    model="qwen2.5:3b",
+    base_url="http://localhost:11434/v1",
 )
 
-pipeline = FarswarmPipeline(llm=llm)
-result = asyncio.run(pipeline.run("earnings_call.mp4", n_agents=1000))
+pipeline = NoLemmingPipeline(llm=llm)
+result = asyncio.run(pipeline.run("earnings_call.txt", n_agents=1000))
 
 report = result["analysis"]["report"]
 print(report.to_markdown())
 ```
 
-## Plug-and-Play Design
+---
+
+## Architecture: Why Hybrid (Architecture C)
+
+We evaluated three architectures and chose the one that maximizes signal preservation:
+
+| Architecture | Signal Preserved | Compute Cost | Why Rejected/Selected |
+|---|---|---|---|
+| A: Neural personality init | ~3% | Low | Big Five mapping destroys 95% of signal |
+| B: Continuous neural scoring | ~100% theoretical | 1M forward passes | Infeasible + out-of-distribution on text |
+| **C: Hybrid (selected)** | **~15-25%** | **One-time** | **PCA + clustering preserves signal, engagement templates modulate behavior** |
+
+Architecture C runs the brain encoder **once** on the original stimulus, skips the lossy Big Five mapping entirely, and uses PCA + clustering to create **neural archetypes** directly from activation data.
+
+---
+
+## Plug-and-Play
 
 Every component is swappable:
 
 ### Brain Encoders
 ```python
-from farswarm.encoders.registry import encoder_registry
+from nolemming.encoders.registry import encoder_registry
 
-# Built-in
-encoder_registry.get("mock")      # Synthetic responses for testing
-encoder_registry.get("tribe_v2")  # Meta TRIBE v2
+encoder_registry.get("mock")       # Synthetic (testing)
+encoder_registry.get("tribe_v2")   # Meta TRIBE v2
 
-# Register your own
-from farswarm.encoders.base import BrainEncoder
-class MyEncoder(BrainEncoder):
-    def encode(self, stimulus):
-        ...
-    def name(self):
-        return "my_encoder"
-
+# Add your own
+from nolemming.encoders.base import BrainEncoder
+class MyEncoder(BrainEncoder): ...
 encoder_registry.register("my_encoder", MyEncoder)
 ```
 
 ### LLM Backends
 ```python
-from farswarm.core.llm import OpenAICompatibleBackend
+from nolemming.core.llm import OpenAICompatibleBackend
 
-# OpenAI
-llm = OpenAICompatibleBackend(model="gpt-4o")
-
-# Ollama (local)
-llm = OpenAICompatibleBackend(model="llama3", base_url="http://localhost:11434/v1")
-
-# Together AI
-llm = OpenAICompatibleBackend(model="meta-llama/Llama-3-70b", base_url="https://api.together.xyz/v1", api_key="...")
-
-# vLLM (self-hosted)
-llm = OpenAICompatibleBackend(model="my-model", base_url="http://localhost:8000/v1")
-
-# Any OpenAI SDK-compatible endpoint
-llm = OpenAICompatibleBackend(model="...", base_url="...", api_key="...")
+OpenAICompatibleBackend(model="gpt-4o")                                          # OpenAI
+OpenAICompatibleBackend(model="qwen2.5:3b", base_url="http://localhost:11434/v1") # Ollama
+OpenAICompatibleBackend(model="meta-llama/Llama-3-70b", base_url="https://api.together.xyz/v1")  # Together
 ```
 
 ### Environment Variables
 ```bash
-export FARSWARM_LLM_MODEL=llama3
-export FARSWARM_LLM_BASE_URL=http://localhost:11434/v1
-export FARSWARM_ENCODER_NAME=mock
+export NOLEMMING_LLM_MODEL=qwen2.5:3b
+export NOLEMMING_LLM_BASE_URL=http://localhost:11434/v1
+export NOLEMMING_ENCODER_NAME=mock
 ```
+
+---
 
 ## Use Cases
 
-### Market Sentiment Prediction
-Feed an earnings call, predict the 72-hour social sentiment trajectory.
-```bash
-farswarm run earnings_call.mp4 --agents 1000 --rounds 72
-```
+**Market Sentiment Prediction** — Feed an earnings call, predict the 72-hour social sentiment trajectory.
 
-### Content A/B Testing
-Compare how different content variants spread through a neurally-diverse population.
-```bash
-farswarm compare headline_a.txt headline_b.txt --agents 2000
-```
+**Content A/B Testing** — Compare how different content variants spread through a neurally-diverse population. No real users needed.
 
-### Misinformation Spread Modeling
-Simulate how misinformation propagates, identify which neural archetypes are most susceptible.
-```bash
-farswarm run misinfo_article.txt --agents 5000 --rounds 168
-```
+**Misinformation Modeling** — Simulate how misinformation propagates. Identify which neural archetypes are most susceptible.
 
-### Regime Change Detection
-Track shifts in population-level neural response distributions across sequential stimuli.
-```python
-from farswarm.core.pipeline import FarswarmPipeline
+**Regime Change Detection** — Track shifts in population-level neural response distributions across sequential stimuli.
 
-pipeline = FarswarmPipeline()
-for stimulus in sequential_stimuli:
-    response = pipeline.encode_stimulus(stimulus)
-    archetypes, _ = pipeline.build_archetypes(response)
-    # Monitor archetype distribution shifts
-```
+---
 
 ## Benchmarking
 
-Farswarm ships with a first-class benchmarking framework. Transparency about what works and what doesn't.
+NoLemming ships with a first-class benchmarking framework. 5 real earnings call events (AAPL, TSLA, NVDA, META, GOOGL Q4 2025) with ground truth sentiment data.
 
 ```bash
 # 3-way comparison: neural vs vanilla vs random
-farswarm benchmark aapl_q4_2025
+nolemming benchmark aapl_q4_2025
 
-# Results include:
-# - Sentiment trajectory correlation (Pearson r)
-# - Engagement distribution divergence (KL)
-# - Narrative overlap (Jaccard similarity)
+# Run full Phase 0 validation
+python scripts/run_phase0.py
 ```
+
+---
 
 ## Project Structure
 
 ```
-farswarm/
+nolemming/
 ├── core/           # Pipeline, types, LLM abstraction
 ├── encoders/       # Brain encoder plugins (mock, TRIBE v2, custom)
 ├── mapping/        # PCA compression, archetype clustering, engagement templates
 ├── agents/         # Agent factory, profile generation
-├── simulation/     # OASIS-based social simulation engine
+├── simulation/     # Social simulation engine (OASIS + LLM fallback)
 ├── analysis/       # Sentiment, networks, signals, reports
-├── benchmark/      # 3-way comparison framework
+├── benchmark/      # 3-way comparison framework + ground truth data
 ├── web/            # FastAPI server
 └── cli.py          # CLI entry point
 ```
@@ -219,10 +202,9 @@ farswarm/
 ## Requirements
 
 - Python >= 3.11
-- Any OpenAI SDK-compatible LLM provider
-- Optional: TRIBE v2 (requires GPU, CC BY-NC license)
-- Optional: OASIS/CAMEL-AI (for full social simulation)
+- Any OpenAI SDK-compatible LLM (Ollama, OpenAI, Together, vLLM, Groq...)
+- Optional: TRIBE v2 (GPU, CC BY-NC) | OASIS/CAMEL-AI (full social sim)
 
 ## License
 
-MIT (Farswarm code). Brain encoder adapters carry their own licenses (TRIBE v2 is CC BY-NC).
+MIT (NoLemming code). Brain encoder adapters carry their own licenses.

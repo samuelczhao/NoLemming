@@ -6,22 +6,22 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from farswarm.analysis.networks import (
+from nolemming.analysis.networks import (
     CoalitionReport,
     NetworkAnalyzer,
 )
-from farswarm.analysis.sentiment import (
+from nolemming.analysis.sentiment import (
     SentimentAnalyzer,
     SentimentTrajectory,
     _score_text,
 )
-from farswarm.analysis.signals import (
+from nolemming.analysis.signals import (
     PredictionSignals,
     SignalExtractor,
     _compute_momentum,
     _compute_volatility,
 )
-from farswarm.core.types import (
+from nolemming.core.types import (
     AgentProfile,
     EngagementTemplate,
     NeuralArchetype,

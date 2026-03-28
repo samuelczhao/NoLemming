@@ -5,18 +5,18 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from farswarm.core.types import (
+from nolemming.core.types import (
     FSAVERAGE5_VERTICES,
     NeuralResponse,
     Stimulus,
     StimulusType,
 )
-from farswarm.encoders.mock import (
+from nolemming.encoders.mock import (
     TIMESTEPS_TEXT,
     TIMESTEPS_VIDEO,
     MockEncoder,
 )
-from farswarm.encoders.registry import EncoderRegistry, encoder_registry
+from nolemming.encoders.registry import EncoderRegistry, encoder_registry
 
 
 # --- MockEncoder ---

@@ -3,9 +3,9 @@
 import numpy as np
 import pytest
 
-from farswarm.agents.factory import AgentFactory
-from farswarm.agents.memory import AgentMemory
-from farswarm.core.types import AgentProfile, NeuralArchetype
+from nolemming.agents.factory import AgentFactory
+from nolemming.agents.memory import AgentMemory
+from nolemming.core.types import AgentProfile, NeuralArchetype
 
 
 def _make_archetypes(n: int = 3) -> list[NeuralArchetype]:
