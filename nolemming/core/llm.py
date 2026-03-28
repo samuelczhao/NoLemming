@@ -79,8 +79,10 @@ class OpenAICompatibleBackend(LLMBackend):
     ) -> LLMResponse:
         import asyncio
 
+        from openai import RateLimitError
+
         client = self._get_client()
-        for attempt in range(5):
+        for attempt in range(8):
             try:
                 response = await client.chat.completions.create(  # type: ignore[union-attr]
                     model=self._model,
@@ -92,9 +94,13 @@ class OpenAICompatibleBackend(LLMBackend):
                     max_tokens=max_tokens,
                 )
                 break
+            except RateLimitError:
+                wait = 2 + attempt * 2
+                await asyncio.sleep(wait)
+                continue
             except Exception as e:
-                if "rate_limit" in str(e).lower() or "429" in str(e):
-                    wait = 2 ** attempt
+                if "429" in str(e) or "rate" in str(e).lower():
+                    wait = 2 + attempt * 2
                     await asyncio.sleep(wait)
                     continue
                 raise
