@@ -7,11 +7,10 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from openai import AsyncOpenAI
-
 from nolemming.analysis.networks import CoalitionReport
 from nolemming.analysis.sentiment import SentimentTrajectory
 from nolemming.analysis.signals import PredictionSignals
+from nolemming.core.llm import LLMBackend
 from nolemming.core.types import SimulationResult
 
 
@@ -35,10 +34,7 @@ class PredictionReport:
     generated_at: str = ""
 
     def to_markdown(self) -> str:
-        """Render report as markdown."""
-        predictions = "\n".join(
-            f"- {p}" for p in self.key_predictions
-        )
+        predictions = "\n".join(f"- {p}" for p in self.key_predictions)
         return (
             f"# {self.title}\n\n"
             f"**Generated:** {self.generated_at}\n"
@@ -68,26 +64,6 @@ REPORT_SYSTEM_PROMPT = (
     "prediction report. Respond with valid JSON only."
 )
 
-
-def _build_analysis_prompt(
-    result: SimulationResult,
-    sentiment: SentimentTrajectory,
-    signals: PredictionSignals,
-    coalitions: CoalitionReport,
-) -> str:
-    """Build the LLM prompt with all analysis data."""
-    return json.dumps({
-        "simulation_id": result.simulation_id,
-        "n_agents": result.config.n_agents,
-        "n_rounds": result.config.n_rounds,
-        "sentiment_trajectory": sentiment.to_dict(),
-        "signals": signals.to_dict(),
-        "polarization_index": coalitions.polarization_index,
-        "archetype_affinity": coalitions.archetype_affinity,
-        "n_coalitions": len(coalitions.groups),
-    })
-
-
 REPORT_USER_TEMPLATE = (
     "Analyze this simulation data and produce a prediction report.\n\n"
     "Data:\n{data}\n\n"
@@ -101,11 +77,31 @@ REPORT_USER_TEMPLATE = (
 )
 
 
+def _build_analysis_prompt(
+    result: SimulationResult,
+    sentiment: SentimentTrajectory,
+    signals: PredictionSignals,
+    coalitions: CoalitionReport,
+) -> str:
+    return json.dumps({
+        "simulation_id": result.simulation_id,
+        "n_agents": result.config.n_agents,
+        "n_rounds": result.config.n_rounds,
+        "sentiment_trajectory": sentiment.to_dict(),
+        "signals": signals.to_dict(),
+        "polarization_index": coalitions.polarization_index,
+        "archetype_affinity": coalitions.archetype_affinity,
+        "n_coalitions": len(coalitions.groups),
+    })
+
+
 def _parse_llm_response(
     raw: str, signals: PredictionSignals,
 ) -> PredictionReport:
-    """Parse LLM JSON response into a PredictionReport."""
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        data = {}
     return PredictionReport(
         title=data.get("title", "Prediction Report"),
         summary=data.get("summary", ""),
@@ -118,12 +114,46 @@ def _parse_llm_response(
     )
 
 
+def _build_fallback_report(
+    signals: PredictionSignals,
+    sentiment: SentimentTrajectory,
+    coalitions: CoalitionReport,
+) -> PredictionReport:
+    """Generate a report without LLM when none is available."""
+    direction = "positive" if signals.sentiment_score > 0 else "negative"
+    return PredictionReport(
+        title="Simulation Prediction Report",
+        summary=(
+            f"Sentiment is {direction} ({signals.sentiment_score:+.2f}) "
+            f"with {signals.consensus_strength:.0%} consensus. "
+            f"Dominant archetype: {signals.dominant_archetype}."
+        ),
+        sentiment_analysis=(
+            f"The simulation produced {len(sentiment.timestamps)} "
+            f"data points. Sentiment momentum: {signals.sentiment_momentum:+.3f}. "
+            f"Predicted volatility: {signals.volatility_estimate:.3f}."
+        ),
+        archetype_dynamics=(
+            f"The {signals.dominant_archetype} archetype dominated discourse. "
+            f"Population split into {len(coalitions.groups)} coalitions "
+            f"with polarization index {coalitions.polarization_index:.2f}."
+        ),
+        key_predictions=[
+            f"Sentiment direction: {direction}",
+            f"Consensus: {'strong' if signals.consensus_strength > 0.7 else 'weak'}",
+            f"Dominant narrative: {signals.dominant_archetype}-driven",
+        ],
+        confidence=0.3,
+        signals=signals,
+        generated_at=datetime.now(UTC).isoformat(),
+    )
+
+
 class ReportGenerator:
     """Generates structured prediction reports using LLM synthesis."""
 
-    def __init__(self, llm_model: str = "gpt-4o-mini") -> None:
-        self._model = llm_model
-        self._client = AsyncOpenAI()
+    def __init__(self, llm: LLMBackend | None = None) -> None:
+        self._llm = llm
 
     async def generate(
         self,
@@ -133,20 +163,16 @@ class ReportGenerator:
         coalitions: CoalitionReport,
     ) -> PredictionReport:
         """Synthesize all analysis into a structured prediction report."""
+        if self._llm is None:
+            return _build_fallback_report(signals, sentiment, coalitions)
+
         prompt_data = _build_analysis_prompt(
             result, sentiment, signals, coalitions,
         )
         user_msg = REPORT_USER_TEMPLATE.format(data=prompt_data)
-
-        response = await self._client.chat.completions.create(
-            model=self._model,
-            messages=[
-                {"role": "system", "content": REPORT_SYSTEM_PROMPT},
-                {"role": "user", "content": user_msg},
-            ],
+        response = await self._llm.generate(
+            system_prompt=REPORT_SYSTEM_PROMPT,
+            user_prompt=user_msg,
             temperature=0.3,
-            response_format={"type": "json_object"},
         )
-
-        raw = response.choices[0].message.content or "{}"
-        return _parse_llm_response(raw, signals)
+        return _parse_llm_response(response.content, signals)

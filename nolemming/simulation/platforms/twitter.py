@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import logging
 import sqlite3
 import tempfile
@@ -196,10 +197,10 @@ class TwitterPlatform(SimulationPlatform):
         return actions
 
     def _generate_static_post(self, agent: AgentProfile) -> str:
-        """Create a synthetic post without LLM."""
-        label = agent.archetype.label
-        stance = agent.stance
-        return f"[{agent.username}] As a {label} thinker ({stance}): discussing the topic."
+        """Generate a content-aware post without LLM using templates."""
+        return _generate_template_post(
+            agent, self._stimulus_context, self._posts, self._round,
+        )
 
     def _persist_post(self, user_id: int, content: str) -> None:
         """Write post to SQLite if connection exists."""
@@ -232,3 +233,91 @@ class TwitterPlatform(SimulationPlatform):
         if isinstance(result, list):
             return [{"raw": r} for r in result]
         return [{"raw": result}]
+
+
+# --- Template-based post generation (no LLM required) ---
+
+_ARCHETYPE_REACTIONS: dict[str, list[str]] = {
+    "fear-dominant": [
+        "This is concerning. {topic} raises serious red flags.",
+        "Don't get complacent. The risks here are being underestimated.",
+        "Everyone celebrating but I see warning signs in {topic}.",
+        "This won't end well. {topic} is masking deeper problems.",
+        "Sell the news. {topic} has 'top signal' written all over it.",
+    ],
+    "reward-seeking": [
+        "Incredible results! {topic} confirms the growth thesis.",
+        "This is just the beginning. Bullish on {topic}.",
+        "Beating estimates again. The momentum is unstoppable.",
+        "Loading up. {topic} shows exactly why this is a buy.",
+        "Record numbers! {topic} proves the bears wrong again.",
+    ],
+    "analytical": [
+        "Looking at the numbers: {topic} shows mixed signals on margins.",
+        "Key metric to watch: the guidance implies deceleration next Q.",
+        "Revenue beat but cost structure tells a different story.",
+        "Interesting that {topic} mentions capex — run the FCF math.",
+        "The headline number is good but dig into the segments.",
+    ],
+    "social-attuned": [
+        "Everyone's talking about {topic} — the consensus is forming fast.",
+        "The reaction to {topic} is telling. Watch the follow-through.",
+        "Interesting to see the split between retail and institutional takes.",
+        "Social sentiment on {topic} is shifting. Pay attention.",
+        "The crowd is pricing in {topic} already. What's next?",
+    ],
+    "risk-averse": [
+        "The spending numbers in {topic} are alarming. Where's the ROI?",
+        "I'd wait for more clarity. {topic} raises more questions than answers.",
+        "Valuation doesn't make sense given {topic}. Staying on sidelines.",
+        "Capital preservation first. {topic} is not worth the risk.",
+        "Too much uncertainty around {topic}. Need to see follow-through.",
+    ],
+    "contrarian": [
+        "Everyone's bullish on {topic}? That's usually when you sell.",
+        "The consensus is wrong about {topic}. Here's why...",
+        "Contrarian take: {topic} is actually bearish when you look deeper.",
+        "If {topic} is so good, why is smart money selling?",
+        "The market is misreading {topic}. The real story is elsewhere.",
+    ],
+    "verbal-analytical": [
+        "Deep dive on {topic}: management's language on guidance is notable.",
+        "Three things to note about {topic}: margins, capex, and outlook.",
+        "The transcript reveals more than the numbers. {topic} analysis thread.",
+        "Nuanced take: {topic} is positive short-term but has structural concerns.",
+        "Breaking down {topic} segment by segment...",
+    ],
+}
+
+_DEFAULT_REACTIONS = [
+    "Thoughts on {topic}: need to see more data before taking a position.",
+    "Following {topic} closely. The market will sort this out.",
+    "Interesting developments with {topic}. Waiting for dust to settle.",
+]
+
+
+def _generate_template_post(
+    agent: AgentProfile,
+    stimulus_context: str,
+    existing_posts: list[str],
+    round_num: int,
+) -> str:
+    """Generate a diverse, content-aware post without an LLM."""
+    topic = _extract_topic(stimulus_context)
+    label = agent.archetype.label
+    reactions = _ARCHETYPE_REACTIONS.get(label, _DEFAULT_REACTIONS)
+
+    seed_str = f"{agent.agent_id}-{round_num}-{label}"
+    idx = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
+    template = reactions[idx % len(reactions)]
+
+    post = template.format(topic=topic)
+    return f"@{agent.username}: {post}"
+
+
+def _extract_topic(stimulus_context: str) -> str:
+    """Extract a short topic phrase from stimulus context."""
+    first_line = stimulus_context.split("\n")[0][:80]
+    if "." in first_line:
+        first_line = first_line.split(".")[0]
+    return first_line.strip()

@@ -131,14 +131,14 @@ class TestTwitterPlatform:
         trending = platform.get_trending_content()
         assert len(trending) == 3
 
-    async def test_fallback_post_contains_archetype_label(self, tmp_path: Path) -> None:
+    async def test_fallback_post_contains_username(self, tmp_path: Path) -> None:
         db_path = tmp_path / "test.db"
         platform = TwitterPlatform(db_path=db_path)
         agents = _make_agents(1)
         await platform.setup(agents)
         actions = await platform.step(agents)
-        content = actions[0]["content"]
-        assert "test-archetype-0" in content
+        content = str(actions[0]["content"])
+        assert agents[0].username in content
 
     async def test_db_schema_has_required_tables(self, tmp_path: Path) -> None:
         db_path = tmp_path / "test.db"
